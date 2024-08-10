@@ -65,10 +65,5 @@ clear_button = st.button("Clear")
 if clear_button:
     user_question = ""
 
-# Display common FAQs
-st.write("### Common FAQs:")
-common_faqs = df.sample(5)  # Display 5 random FAQs
-for i, row in common_faqs.iterrows():
-    st.write(f"**Q:** {row['Question']}")
-    st.write(f"**A:** {row['Answer']}")
+
 
