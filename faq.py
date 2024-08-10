@@ -50,18 +50,6 @@ def main():
     st.title("Smart FAQ Assistant for Health Topics")
     st.write("Ask any question about heart, lung, and blood-related health topics.")
 
-    # Search Bar for FAQs
-    search_query = st.text_input("Search FAQs")
-    if search_query:
-        filtered_df = df[df['Question'].str.contains(search_query, case=False, na=False)]
-        if not filtered_df.empty:
-            st.subheader("Related FAQs")
-            for _, row in filtered_df.iterrows():
-                st.write(f"**Q:** {row['Question']}")
-                st.write(f"**A:** {row['Answer']}")
-        else:
-            st.write("No FAQs found for the search query.")
-
     # Ask question section
     user_question = st.text_input("Ask your health question")
     if st.button("Submit"):
