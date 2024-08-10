@@ -1,54 +1,64 @@
 import streamlit as st
-import openai
 import pandas as pd
 import numpy as np
-from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
+import openai
 
 openai.api_key = st.secrets["mykey"]
 
-# Load the dataset
-@st.cache_data
-def load_data():
-    df = pd.read_csv('qa_dataset_with_embeddings.csv')
-    df['Question_Embedding'] = df['Question_Embedding'].apply(eval).apply(np.array)
-    return df
+# Replace with your embedding model
+model = "text-embedding-ada-002"
 
-df = load_data()
+# Load your dataset
+try:
+    df = pd.read_csv('qa_dataset_with_embeddings (3).csv')
+    # Convert the 'Question_Embedding' column from string to actual NumPy arrays
+    df['Question_Embedding'] = df['Question_Embedding'].apply(lambda x: np.array(eval(x)))
+except Exception as e:
+    st.error(f"Error loading CSV file: {e}")
 
-# Load the embedding model
-@st.cache_resource
-def load_model():
-    return SentenceTransformer('paraphrase-MiniLM-L6-v2')
+# Function to get embedding
+def get_embedding(text):
+    response = openai.Embedding.create(
+        input=[text],
+        model=model
+    )
+    embedding = response['data'][0]['embedding']
+    return np.array(embedding).reshape(1, -1)
 
-model = load_model()
+def find_best_answer(user_question):
+    # Get embedding for the user's question
+    user_question_embedding = get_embedding(user_question)
 
-# Function to find the most relevant answer
-def find_answer(user_question, df, model, threshold=0.75):
-    user_embedding = model.encode([user_question])
-    similarities = cosine_similarity(user_embedding, list(df['Question_Embedding']))
-    max_sim_idx = np.argmax(similarities)
-    max_sim_score = similarities[0, max_sim_idx]
-    
-    if max_sim_score >= threshold:
-        return df.iloc[max_sim_idx]['Answer'], max_sim_score
+    # Calculate cosine similarities for all questions in the dataset
+    df['Similarity'] = df['Question_Embedding'].apply(lambda x: cosine_similarity(x.reshape(1, -1), user_question_embedding))
+
+    # Find the most similar question and get its corresponding answer
+    most_similar_index = df['Similarity'].idxmax()
+    max_similarity = df['Similarity'].max()
+
+    # Set a similarity threshold to determine if a question is relevant enough
+    similarity_threshold = 0.6  # You can adjust this value
+
+    if max_similarity >= similarity_threshold:
+        best_answer = df.loc[most_similar_index, 'Answer']
+        return best_answer
     else:
-        return None, max_sim_score
+        return "I apologize, but I don't have information on that topic yet. Could you please ask other questions?"
 
-# Streamlit interface
-st.title("Smart FAQ Assistant for Health Topics")
-st.write("Ask any question about heart, lung, and blood-related health topics.")
+def main():
+    st.title("Health Question Answering")
 
-user_question = st.text_input("Enter your question:")
-search_button = st.button("Find Answer")
+    user_question = st.text_input("Ask your health question")
+    if st.button("Submit"):
+        if user_question:
+            best_answer = find_best_answer(user_question)
+            st.write(best_answer)
+        else:
+            st.write("Please enter a question.")
 
-if search_button and user_question:
-    answer, score = find_answer(user_question, df, model)
-    if answer:
-        st.write(f"**Answer:** {answer}")
-        st.write(f"**Similarity Score:** {score:.2f}")
-    else:
-        st.write("I apologize, but I don't have information on that topic yet. Could you please ask other questions?")
+if __name__ == "__main__":
+    main()
 
 # Optional features
 clear_button = st.button("Clear")
