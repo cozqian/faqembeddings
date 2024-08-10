@@ -11,7 +11,7 @@ model = "text-embedding-ada-002"
 
 # Load your dataset
 try:
-    df = pd.read_csv('qa_dataset_with_embeddings (3).csv')
+    df = pd.read_csv('qa_dataset_with_embeddings.csv')
     # Convert the 'Question_Embedding' column from string to actual NumPy arrays
     df['Question_Embedding'] = df['Question_Embedding'].apply(lambda x: np.array(eval(x)))
 except Exception as e:
