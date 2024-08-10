@@ -66,7 +66,6 @@ def main():
     
     if st.button("Clear"):
         st.text_input("Ask your health question", value="", key="clear_input")
-        st.write("")
 
 if __name__ == "__main__":
     main()
